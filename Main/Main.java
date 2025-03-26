@@ -59,6 +59,7 @@ public class Main {
                 break;
             case 2:
                 historialController.registrarHistorialMedico();
+                historialView.mostrarHistoriales();
                 break;
             case 3:
                 

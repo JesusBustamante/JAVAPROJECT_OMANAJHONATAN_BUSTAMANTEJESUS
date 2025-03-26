@@ -25,6 +25,26 @@ public class HealthHistorial {
         this.proceduresPerformed = proceduresPerformed;
     }
 
+    public HealthHistorial(int id, Pet pet) {
+        this.id = id;
+        this.pet = pet;
+    }
+
+    public HealthHistorial(int id, Pet pet, List<ProcedurePerformed> proceduresPerformed) {
+        this.id = id;
+        this.pet = pet;
+        this.proceduresPerformed = proceduresPerformed;
+    }
+
+    public HealthHistorial(int id, Pet pet, List<Vaccines> vaccines, List<ProcedurePerformed> proceduresPerformed) {
+        this.id = id;
+        this.pet = pet;
+        this.vaccines = vaccines;
+        this.proceduresPerformed = proceduresPerformed;
+    }
+    
+    
+
     public int getId() {
         return id;
     }
