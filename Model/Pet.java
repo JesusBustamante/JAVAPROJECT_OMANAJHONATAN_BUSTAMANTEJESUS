@@ -65,7 +65,14 @@ public class Pet {
         this.id = id;
         this.name = name;
     }
-    
+
+    public Pet(int id) {
+        this.id = id;
+    }
+
+    public Pet() {
+    }
+
     public int getId() {
         return id;
     }

@@ -17,7 +17,7 @@ public class BBDD_Connection {
         if(conn == null || conn.isClosed()) {
             conn = DriverManager.getConnection(URL, USER, PASSWORD);
         }
-        return conn;
+        return conn;  
         
     }
     

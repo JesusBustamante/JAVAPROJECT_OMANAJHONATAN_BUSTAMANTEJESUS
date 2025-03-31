@@ -22,6 +22,19 @@ public class CustomizedPlan {
         this.pet = pet;
     }
 
+    public CustomizedPlan(int id, String name, String description, String race, int behavior, List<String> recommendations) {
+        this.id = id;
+        this.name = name;
+        this.description = description;
+        this.race = race;
+        this.behavior = behavior;
+        this.recommendations = recommendations;
+    }
+
+    public CustomizedPlan(int id) {
+        this.id = id;
+    }
+
     public int getId() {
         return id;
     }

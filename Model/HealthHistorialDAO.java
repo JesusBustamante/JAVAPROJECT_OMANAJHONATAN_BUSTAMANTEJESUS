@@ -3,7 +3,9 @@ package Model;
 import java.sql.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class HealthHistorialDAO {
 
@@ -50,39 +52,65 @@ public class HealthHistorialDAO {
         String insertRelationSQL = "INSERT INTO HealthHistorial_ProceduresPerformed (healthHistorial_id, procedurePerformed_id) VALUES (?, ?)";
 
         Connection conn = null;
+        PreparedStatement stmtProcedure = null;
+        PreparedStatement stmtRelation = null;
+        ResultSet generatedKeys = null;
+
         try {
             conn = BBDD_Connection.conectar();
-            PreparedStatement stmtProcedure = conn.prepareStatement(insertProcedureSQL, Statement.RETURN_GENERATED_KEYS);
-            PreparedStatement stmtRelation = conn.prepareStatement(insertRelationSQL);
+            conn.setAutoCommit(false); // Iniciar transacción 
+
+            stmtProcedure = conn.prepareStatement(insertProcedureSQL, Statement.RETURN_GENERATED_KEYS);
+            stmtRelation = conn.prepareStatement(insertRelationSQL);
 
             for (ProcedurePerformed procedure : procedures) {
-                // Insertar el procedimiento si su ID es 0 (nuevo)
-                if (procedure.getId() == 0) {
-                    stmtProcedure.setString(1, procedure.getName());
-                    stmtProcedure.setString(2, procedure.getDescription());
-                    stmtProcedure.setDate(3, Date.valueOf(procedure.getDatePerformed()));
-                    stmtProcedure.setString(4, procedure.getType());
-                    stmtProcedure.setString(5, procedure.getPreoperativeReport());
-                    stmtProcedure.executeUpdate();
+                // Insertar el procedimiento
+                stmtProcedure.setString(1, procedure.getName());
+                stmtProcedure.setString(2, procedure.getDescription());
+                stmtProcedure.setDate(3, Date.valueOf(procedure.getDatePerformed()));
+                stmtProcedure.setString(4, procedure.getType());
+                stmtProcedure.setString(5, procedure.getPreoperativeReport());
+                stmtProcedure.executeUpdate();
 
-                    // Obtener el ID generado para asignarlo correctamente
-                    try (ResultSet rs = stmtProcedure.getGeneratedKeys()) {
-                        if (rs.next()) {
-                            procedure.setId(rs.getInt(1));
-                        }
-                    }
+                // Obtener el ID generado
+                generatedKeys = stmtProcedure.getGeneratedKeys();
+                if (generatedKeys.next()) {
+                    int procedureId = generatedKeys.getInt(1);
+
+                    // Insertar en la tabla de relación
+                    stmtRelation.setInt(1, historialId);
+                    stmtRelation.setInt(2, procedureId);
+                    stmtRelation.executeUpdate();
                 }
-
-                // Ahora que el procedimiento tiene un ID válido, lo insertamos en la tabla de relación
-                stmtRelation.setInt(1, historialId);
-                stmtRelation.setInt(2, procedure.getId());
-                stmtRelation.executeUpdate();
             }
+            conn.commit(); // Confirmar transacción
 
         } catch (SQLException e) {
+            try {
+                if (conn != null) {
+                    conn.rollback(); // Revertir en caso de error
+                }
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
             e.printStackTrace();
         } finally {
-            BBDD_Connection.closeConnection();
+            try {
+                if (generatedKeys != null) {
+                    generatedKeys.close();
+                }
+                if (stmtProcedure != null) {
+                    stmtProcedure.close();
+                }
+                if (stmtRelation != null) {
+                    stmtRelation.close();
+                }
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -128,52 +156,57 @@ public class HealthHistorialDAO {
         }
     }
 
-    private void insertarAlergias(int historialId, List<String> allergies) {
-        String sql = "INSERT INTO HealthHistorial_PreExistingConditions (healthHistorial_id, conditions) VALUES (?, ?)";
+    // Método nuevo para insertar alergias (usar este)
+    private void insertarAlergias(int historialId, List<String> alergias) {
+        String sql = "INSERT INTO HealthHistorial_Allergies (healthHistorial_id, allergy) VALUES (?, ?)";
 
-        try (Connection conn = conexion.conectar(); PreparedStatement stmt = conn.prepareStatement(sql)) {
+        try (Connection conn = BBDD_Connection.conectar(); PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            for (String allergy : allergies) {
+            for (String alergia : alergias) {
                 stmt.setInt(1, historialId);
-                stmt.setString(2, allergy);
+                stmt.setString(2, alergia.trim()); // Elimina espacios
                 stmt.executeUpdate();
             }
         } catch (SQLException e) {
+            System.err.println("Error al insertar alergias");
             e.printStackTrace();
-        } finally {
-            BBDD_Connection.closeConnection();
         }
+        // No necesita finally, try-with-resources cierra automáticamente
     }
 
-    private void insertarCondiciones(int historialId, List<PreExistingConditions> conditions) {
-        String sql = "INSERT INTO HealthHistorial_PreExistingConditions (healthHistorial_id, conditions) VALUES (?, ?)";
+// Método nuevo para insertar condiciones (usar este)
+    private void insertarCondiciones(int historialId, List<PreExistingConditions> condiciones) {
+        String sql = "INSERT INTO HealthHistorial_PreExistingConditions (healthHistorial_id, name, description, datePerformed) VALUES (?, ?, ?, ?)";
 
-        try (Connection conn = conexion.conectar(); PreparedStatement stmt = conn.prepareStatement(sql)) {
+        try (Connection conn = BBDD_Connection.conectar(); PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            for (PreExistingConditions condition : conditions) {
+            for (PreExistingConditions condicion : condiciones) {
                 stmt.setInt(1, historialId);
-                stmt.setString(2, condition.getName());
+                stmt.setString(2, condicion.getName());
+                stmt.setString(3, condicion.getDescription());
+
+                if (condicion.getDatePerformed() != null) {
+                    stmt.setDate(4, Date.valueOf(condicion.getDatePerformed()));
+                } else {
+                    stmt.setNull(4, Types.DATE);
+                }
+
                 stmt.executeUpdate();
             }
         } catch (SQLException e) {
+            System.err.println("Error al insertar condiciones preexistentes");
             e.printStackTrace();
-        } finally {
-            BBDD_Connection.closeConnection();
         }
     }
 
-    private List<Vaccines> obtenerVacunasPorHistorial(int historialId) {
+    private List<Vaccines> obtenerVacunasPorHistorial(int historialId, Connection conn) {
         List<Vaccines> vaccines = new ArrayList<>();
         String sql = "SELECT v.id, v.name, v.type, v.manufacturer, v.pack, v.applyDate, v.nextApplyDate, v.expirationDate "
                 + "FROM Vaccine v "
                 + "JOIN HealthHistorial_Vaccines hv ON v.id = hv.vaccine_id "
                 + "WHERE hv.healthHistorial_id = ?";
 
-        Connection conn = null;
-
-        try {
-            conn = BBDD_Connection.conectar();
-            PreparedStatement stmt = conn.prepareStatement(sql);
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, historialId);
             ResultSet rs = stmt.executeQuery();
 
@@ -190,67 +223,125 @@ public class HealthHistorialDAO {
                 );
                 vaccines.add(vaccine);
             }
-
         } catch (SQLException e) {
             e.printStackTrace();
-        } finally {
-            BBDD_Connection.closeConnection();
         }
 
         return vaccines;
     }
 
-    public List<HealthHistorial> obtenerHistorialesConMascotas() {
+    public List<HealthHistorial> obtenerHistorialesCompletos() {
         List<HealthHistorial> historiales = new ArrayList<>();
-        String sql = "SELECT h.id, h.pet_id, p.name AS pet_name "
-                + "FROM HealthHistorial h "
-                + "JOIN Pet p ON h.pet_id = p.id";
-
         Connection conn = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
 
         try {
             conn = BBDD_Connection.conectar();
-            PreparedStatement stmt = conn.prepareStatement(sql);
-            ResultSet rs = stmt.executeQuery();
+            String sql = "SELECT h.id AS historial_id, h.weight, h.pet_id, p.name AS pet_name "
+                    + "FROM HealthHistorial h "
+                    + "JOIN Pet p ON h.pet_id = p.id";
+            stmt = conn.prepareStatement(sql);
+            rs = stmt.executeQuery();
 
             while (rs.next()) {
-                int historialId = rs.getInt("id");
+                int historialId = rs.getInt("historial_id");
                 int petId = rs.getInt("pet_id");
                 String petName = rs.getString("pet_name");
+                double weight = rs.getDouble("weight");
 
-                // Crear el objeto mascota
                 Pet pet = new Pet(petId, petName);
+                HealthHistorial historial = new HealthHistorial(historialId, pet);
+                historial.setWeight(weight);
 
-                // Obtener procedimientos y vacunas de este historial
-                List<ProcedurePerformed> procedures = obtenerProcedimientosPorHistorial(historialId);
-                List<Vaccines> vaccines = obtenerVacunasPorHistorial(historialId);
+                // Obtener y asignar todos los datos relacionados
+                historial.setVaccines(obtenerVacunasPorHistorial(historialId, conn));
+                historial.setProceduresPerformed(obtenerProcedimientosPorHistorial(historialId, conn));
+                historial.setAllergies(obtenerAlergiasPorHistorial(historialId, conn));
+                historial.setPreExistingConditions(obtenerCondicionesPorHistorial(historialId, conn));
 
-                // Crear historial con las vacunas y procedimientos
-                HealthHistorial historial = new HealthHistorial(historialId, pet, vaccines, procedures);
                 historiales.add(historial);
             }
-
         } catch (SQLException e) {
             e.printStackTrace();
         } finally {
-            BBDD_Connection.closeConnection();
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+                if (stmt != null) {
+                    stmt.close();
+                }
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
         }
 
         return historiales;
     }
 
-    private List<ProcedurePerformed> obtenerProcedimientosPorHistorial(int historialId) {
+    // Método para obtener alergias
+    private List<String> obtenerAlergiasPorHistorial(int historialId, Connection conn) {
+        List<String> alergias = new ArrayList<>();
+        String sql = "SELECT allergy FROM HealthHistorial_Allergies WHERE healthHistorial_id = ?";
+
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, historialId);
+            ResultSet rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                alergias.add(rs.getString("allergy"));
+            }
+        } catch (SQLException e) {
+            System.err.println("Error al obtener alergias para historial " + historialId);
+            e.printStackTrace();
+        }
+
+        return alergias;
+    }
+
+    // Método para obtener condiciones (maneja fechas nulas)
+    private List<PreExistingConditions> obtenerCondicionesPorHistorial(int historialId, Connection conn) {
+        List<PreExistingConditions> condiciones = new ArrayList<>();
+        String sql = "SELECT name, description, datePerformed FROM HealthHistorial_PreExistingConditions WHERE healthHistorial_id = ?";
+
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, historialId);
+            ResultSet rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                LocalDate fecha = null;
+                Date fechaSQL = rs.getDate("datePerformed");
+                if (fechaSQL != null) {
+                    fecha = fechaSQL.toLocalDate();
+                }
+
+                condiciones.add(new PreExistingConditions(
+                        0, // ID temporal
+                        rs.getString("name"),
+                        rs.getString("description"),
+                        fecha
+                ));
+            }
+        } catch (SQLException e) {
+            System.err.println("Error al obtener condiciones para historial " + historialId);
+            e.printStackTrace();
+        }
+
+        return condiciones;
+    }
+
+    private List<ProcedurePerformed> obtenerProcedimientosPorHistorial(int historialId, Connection conn) {
         List<ProcedurePerformed> procedures = new ArrayList<>();
-        String sql = "SELECT pp.id, pp.name, pp.description, pp.date, pp.type, pp.preoperativeReport "
+        String sql = "SELECT pp.id, pp.name, pp.description, pp.date as datePerformed, pp.type, pp.preoperativeReport "
                 + "FROM ProcedurePerformed pp "
                 + "JOIN HealthHistorial_ProceduresPerformed hp ON pp.id = hp.procedurePerformed_id "
                 + "WHERE hp.healthHistorial_id = ?";
 
-        Connection conn = null;
-
-        try {
-            conn = BBDD_Connection.conectar();
-            PreparedStatement stmt = conn.prepareStatement(sql);
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, historialId);
             ResultSet rs = stmt.executeQuery();
 
@@ -259,20 +350,64 @@ public class HealthHistorialDAO {
                         rs.getInt("id"),
                         rs.getString("name"),
                         rs.getString("description"),
-                        rs.getDate("date").toLocalDate(),
+                        rs.getDate("datePerformed").toLocalDate(),
                         rs.getString("type"),
                         rs.getString("preoperativeReport")
                 );
                 procedures.add(procedure);
             }
-
         } catch (SQLException e) {
+            System.err.println("Error al obtener procedimientos para historial " + historialId);
             e.printStackTrace();
-        } finally {
-            BBDD_Connection.closeConnection();
         }
 
         return procedures;
     }
 
+    public void debugProcedimientos(int historialId) {
+        String sql = "SELECT hp.healthHistorial_id, hp.procedurePerformed_id, pp.name "
+                + "FROM HealthHistorial_ProceduresPerformed hp "
+                + "LEFT JOIN ProcedurePerformed pp ON hp.procedurePerformed_id = pp.id "
+                + "WHERE hp.healthHistorial_id = ?";
+
+        try (Connection conn = BBDD_Connection.conectar(); PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, historialId);
+            ResultSet rs = stmt.executeQuery();
+
+            System.out.println("=== DEBUG PROCEDIMIENTOS ===");
+            System.out.println("Para historial ID: " + historialId);
+
+            boolean tieneDatos = false;
+            while (rs.next()) {
+                tieneDatos = true;
+                System.out.println("Procedimiento ID: " + rs.getInt("procedurePerformed_id")
+                        + " - Nombre: " + rs.getString("name"));
+            }
+
+            if (!tieneDatos) {
+                System.out.println("No se encontraron procedimientos relacionados");
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Error en debugProcedimientos: " + e.getMessage());
+        }
+    }
+
+    public void debugAllProcedures() {
+        String sql = "SELECT * FROM ProcedurePerformed";
+
+        try (Connection conn = BBDD_Connection.conectar(); Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery(sql)) {
+
+            System.out.println("=== TODOS LOS PROCEDIMIENTOS EN BD ===");
+            while (rs.next()) {
+                System.out.println("ID: " + rs.getInt("id")
+                        + ", Nombre: " + rs.getString("name")
+                        + ", Tipo: " + rs.getString("type")
+                        + ", Fecha: " + rs.getDate("date"));
+            }
+        } catch (SQLException e) {
+            System.err.println("Error en debugAllProcedures: " + e.getMessage());
+        }
+    }
 }

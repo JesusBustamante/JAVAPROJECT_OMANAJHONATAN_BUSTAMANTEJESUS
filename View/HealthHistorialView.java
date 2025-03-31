@@ -1,8 +1,10 @@
 package View;
 
 import Model.HealthHistorial;
+import Model.PreExistingConditions;
 import Model.ProcedurePerformed;
 import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -151,4 +153,72 @@ public class HealthHistorialView {
         }
     }
 
+    public String solicitarDescripcionCondicion(String nombreCondicion) {
+        System.out.print("Descripción para la condición '" + nombreCondicion + "' (opcional): ");
+        return scanner.nextLine();
+    }
+
+    public LocalDate solicitarFechaCondicion(String nombreCondicion) {
+        while (true) {
+            System.out.print("Fecha para condición '" + nombreCondicion + "' (formato YYYY-MM-DD, dejar vacío si no aplica): ");
+            String input = scanner.nextLine().trim();
+
+            if (input.isEmpty()) {
+                return null;
+            }
+
+            try {
+                return LocalDate.parse(input);
+            } catch (DateTimeParseException e) {
+                System.out.println("Formato de fecha inválido. Intente nuevamente.");
+            }
+        }
+    }
+
+    public LocalDate solicitarFechaAplicacionVacuna(String nombreVacuna) {
+        while (true) {
+            System.out.print("Fecha de aplicación para vacuna '" + nombreVacuna + "' (YYYY-MM-DD): ");
+            String input = scanner.nextLine().trim();
+
+            try {
+                return LocalDate.parse(input);
+            } catch (DateTimeParseException e) {
+                System.out.println("Formato de fecha inválido. Intente nuevamente.");
+            }
+        }
+    }
+
+    public void mostrarResumenHistorial(HealthHistorial historial) {
+        System.out.println("\n--- RESUMEN DEL HISTORIAL ---");
+        System.out.println("Mascota: " + historial.getPet().getName());
+        System.out.println("Peso: " + historial.getWeight() + " kg");
+
+        System.out.println("\nAlergias:");
+        if (historial.getAllergies().isEmpty()) {
+            System.out.println(" - Ninguna alergia registrada");
+        } else {
+            historial.getAllergies().forEach(a -> System.out.println(" - " + a));
+        }
+
+        System.out.println("\nCondiciones Preexistentes:");
+        if (historial.getPreExistingConditions().isEmpty()) {
+            System.out.println(" - Ninguna condición registrada");
+        } else {
+            for (PreExistingConditions cond : historial.getPreExistingConditions()) {
+                String fechaStr = cond.getDatePerformed() != null
+                        ? cond.getDatePerformed().toString()
+                        : "(sin fecha especificada)";
+                System.out.println(" - " + cond.getName() + ": " + cond.getDescription() + " (" + fechaStr + ")");
+            }
+        }
+
+        System.out.println("\nVacunas:");
+        if (historial.getVaccines().isEmpty()) {
+            System.out.println(" - Ninguna vacuna registrada");
+        } else {
+            historial.getVaccines().forEach(v -> System.out.println(
+                    " - " + v.getName() + " (" + v.getType() + "), aplicada: " + v.getApplyDate()
+            ));
+        }
+    }
 }

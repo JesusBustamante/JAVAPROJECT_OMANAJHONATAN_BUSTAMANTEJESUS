@@ -23,7 +23,7 @@ public class PetDAO {
             stmt.setInt(10, pet.getOwner().getId());
             stmt.executeUpdate();
 
-            System.out.println("✔ Nueva mascota " + pet.getId() + " - " + pet.getName() + " registrada para el dueño " + pet.getOwner().getFull_name());
+            
 
         } catch (SQLException e) {
             e.printStackTrace();
