@@ -2,21 +2,28 @@ package View;
 
 import Model.Supplier;
 import java.util.List;
+import java.util.Scanner;
 
 public class SupplierView {
+    private Scanner scanner;
+
+    public SupplierView() {
+        this.scanner = new Scanner(System.in);
+    }
+
     public Supplier getSupplierDetails() {
         System.out.println("\n--- REGISTRO DE PROVEEDOR ---");
         System.out.print("Nombre del proveedor: ");
-        String name = System.console().readLine();
+        String name = scanner.nextLine();
         
         System.out.print("Dirección: ");
-        String address = System.console().readLine();
+        String address = scanner.nextLine();
         
         System.out.print("Teléfono: ");
-        String cellphone = System.console().readLine();
+        String cellphone = scanner.nextLine();
         
         System.out.print("Email: ");
-        String email = System.console().readLine();
+        String email = scanner.nextLine();
         
         return new Supplier(name, address, cellphone, email);
     }
@@ -43,7 +50,7 @@ public class SupplierView {
 
     public int getSupplierId() {
         System.out.print("\nIngrese ID del proveedor: ");
-        return Integer.parseInt(System.console().readLine());
+        return Integer.parseInt(scanner.nextLine());
     }
 
     public void displaySuccessMessage(String message) {

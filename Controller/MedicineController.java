@@ -9,11 +9,18 @@ import java.sql.SQLException;
 import java.util.Scanner;
 
 public class MedicineController {
+
     private MedicineView view;
     private MedicineDAO medicineDAO;
     private SupplierDAO supplierDAO;
     private Scanner scanner;
 
+    public MedicineController(MedicineView view, MedicineDAO medicineDAO, SupplierDAO supplierDAO) {
+        this.view = view;
+        this.medicineDAO = medicineDAO;
+        this.supplierDAO = supplierDAO;
+    }
+    
     public MedicineController(MedicineView view) {
         this.view = view;
         this.scanner = new Scanner(System.in);
@@ -26,20 +33,20 @@ public class MedicineController {
     }
 
     // Nuevo método para mostrar el menú de medicamentos
-    public void showMedicineMenu() {
+    /*public void showMedicineMenu() {
         boolean exit = false;
-        
+
         while (!exit) {
             System.out.println("\n--- MENÚ DE MEDICAMENTOS ---");
             System.out.println("1. Registrar nuevo medicamento");
             System.out.println("2. Verificar stock y realizar pedido");
             System.out.println("3. Volver al menú principal");
             System.out.print("Seleccione una opción: ");
-            
+
             int option;
             try {
                 option = Integer.parseInt(scanner.nextLine());
-                
+
                 switch (option) {
                     case 1:
                         registerMedicine();
@@ -60,29 +67,28 @@ public class MedicineController {
             }
         }
     }
-    
 
     public void registerMedicine() {
-    try {
+        try {
 
-        Supplier supplier = view.getSupplierDetails();
-        int supplierId = supplierDAO.insertSupplier(supplier);
-        supplier.setId(supplierId);
-        
-        Medicine medicine = view.getMedicineDetails(supplierId);
-        boolean medicineSuccess = medicineDAO.insertMedicine(medicine);
-        
-        if (medicineSuccess) {
-            view.displaySuccessMessage("Medicamento registrado exitosamente con ID de proveedor: " + supplierId);
-        } else {
-            view.displayErrorMessage("Error al registrar el medicamento");
+            Supplier supplier = view.getSupplierDetails();
+            int supplierId = supplierDAO.insertSupplier(supplier);
+            supplier.setId(supplierId);
+
+            Medicine medicine = view.getMedicineDetails(supplierId);
+            boolean medicineSuccess = medicineDAO.insertMedicine(medicine);
+
+            if (medicineSuccess) {
+                view.displaySuccessMessage("Medicamento registrado exitosamente con ID de proveedor: " + supplierId);
+            } else {
+                view.displayErrorMessage("Error al registrar el medicamento");
+            }
+        } catch (SQLException e) {
+            view.displayErrorMessage("Error en la base de datos: " + e.getMessage());
+        } catch (Exception e) {
+            view.displayErrorMessage("Error: " + e.getMessage());
         }
-    } catch (SQLException e) {
-        view.displayErrorMessage("Error en la base de datos: " + e.getMessage());
-    } catch (Exception e) {
-        view.displayErrorMessage("Error: " + e.getMessage());
     }
-}
 
     public void checkStockAndOrder(int medicineId) {
         try {
@@ -93,5 +99,5 @@ public class MedicineController {
         } catch (SQLException e) {
             view.displayErrorMessage("Error al verificar stock: " + e.getMessage());
         }
-    }
+    }*/
 }
