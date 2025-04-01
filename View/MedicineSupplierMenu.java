@@ -1,4 +1,4 @@
-package View;
+/*package View;
 
 import Controller.MedicineController;
 import Controller.MedicineController;
@@ -47,4 +47,4 @@ public class MedicineSupplierMenu {
             }
         }
     }
-}
+}*/

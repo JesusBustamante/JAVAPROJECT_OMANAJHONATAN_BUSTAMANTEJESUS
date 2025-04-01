@@ -3,17 +3,37 @@ package Model;
 import java.util.Date;
 
 public class Supply {
-    private int id, stock, supplierId;
-    private String type, pack;
-    private Date entryDate, expirationDate;
-    
-    public Supply(String type, String pack, int stock, Date entryDate, Date expirationDate, int supplierId) {
+
+    private int id;
+    private String type;
+    private String pack;
+    private Date entryDate;
+    private Date expirationDate;
+    private Supplier supplier;
+
+    public Supply(int id, String type, String pack, Date entryDate, Date expirationDate, Supplier supplier) {
+        this.id = id;
         this.type = type;
         this.pack = pack;
-        this.stock = stock;
         this.entryDate = entryDate;
         this.expirationDate = expirationDate;
-        this.supplierId = supplierId;
+        this.supplier = supplier;
+    }
+
+    public Supply(String type, String pack, Date entryDate, Date expirationDate, Supplier supplier) {
+        this.type = type;
+        this.pack = pack;
+        this.entryDate = entryDate;
+        this.expirationDate = expirationDate;
+        this.supplier = supplier;
+    }
+    
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
     }
 
     public String getType() {
@@ -39,13 +59,26 @@ public class Supply {
     public void setEntryDate(Date entryDate) {
         this.entryDate = entryDate;
     }
-    
-    
-    
-    public int getId() { return id; }
-    public void setId(int id) { this.id = id; }
-    public int getStock() { return stock; }
-    public Date getExpirationDate() { return expirationDate; }
-    public int getSupplierId() { return supplierId; }
-}
 
+    public Date getExpirationDate() {
+        return expirationDate;
+    }
+
+    public void setExpirationDate(Date expirationDate) {
+        this.expirationDate = expirationDate;
+    }
+
+    public Supplier getSupplier() {
+        return supplier;
+    }
+
+    public void setSupplier(Supplier supplier) {
+        this.supplier = supplier;
+    }
+
+    public boolean isExpiringSoon() {
+        Date today = new Date();
+        long difference = expirationDate.getTime() - today.getTime();
+        return difference <= (7 * 24 * 60 * 60 * 1000); 
+    }
+}

@@ -2,49 +2,85 @@ package Controller;
 
 import Model.Supply;
 import Model.SupplyDAO;
-import View.ConsoleView;
+import Model.Supplier;
+import Model.SupplierDAO;
+import View.SupplyView;
+
 import java.sql.SQLException;
-import java.util.Date;
+import java.util.List;
+import java.util.Scanner;
 
 public class SupplyController {
-    private SupplyDAO dao;
-    private ConsoleView view;
-    
+
+    private final SupplyView view;
+    private final SupplyDAO supplyDAO;
+    private final SupplierDAO supplierDAO;
+    private final Scanner scanner = new Scanner(System.in);
+
     public SupplyController() throws SQLException {
-        this.dao = new SupplyDAO();
-        this.view = new ConsoleView();
+        this.view = new SupplyView();
+        this.supplyDAO = new SupplyDAO();
+        this.supplierDAO = new SupplierDAO();
     }
-    
-    public void registerSupply(String type, String pack, int stock, Date entryDate, 
-                              Date expirationDate, int supplierId) {
-        try {
-            if (expirationDate.before(new Date())) {
-                throw new IllegalArgumentException("Expiration date cannot be in the past");
+
+    public void showSupplyMenu() {
+        boolean exit = false;
+
+        while (!exit) {
+            System.out.println("\n--- MENÚ DE INSUMOS ---");
+            System.out.println("1. Registrar nuevo insumo");
+            System.out.println("2. Listar todos los insumos");
+            System.out.println("3. Mostrar alertas de insumos por vencer");
+            System.out.println("4. Volver al menú principal");
+            System.out.print("Seleccione una opción: ");
+
+            try {
+                int option = Integer.parseInt(scanner.nextLine());
+
+                switch (option) {
+                    case 1:
+                        registerSupply();
+                        break;
+                    case 2:
+                        listAllSupplies();
+                        break;
+                    case 3:
+                        showExpiringSupplies();
+                        break;
+                    case 4:
+                        exit = true;
+                        break;
+                    default:
+                        System.out.println("Opción no válida");
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("Ingrese un número válido");
+            } catch (SQLException e) {
+                System.out.println("Error de base de datos: " + e.getMessage());
             }
-            if (stock < 0) {
-                throw new IllegalArgumentException("Stock cannot be negative");
-            }
-            
-            Supply supply = new Supply(type, pack, stock, entryDate, expirationDate, supplierId);
-            if (!dao.insertSupply(supply)) {
-                throw new SQLException("Failed to register supply");
-            }
-            view.showSupplySuccess(supply);
-        } catch (SQLException e) {
-            view.showError(e.getMessage());
-        } catch (IllegalArgumentException e) {
-            view.showError(e.getMessage());
         }
     }
 
-    @Override
-    public String toString() {
-        return super.toString(); 
+    private void registerSupply() throws SQLException {
+        int supplierId = view.getSupplierId();
+        Supplier supplier = supplierDAO.getSupplierById(supplierId);
+        Supply supply = view.getSupplyDetails(supplier);
+
+        if (supplierId <= 0) {
+            view.displayErrorMessage("ID de proveedor no válido.");
+            return;
+        }
+
     }
-    
-    
 
-    
+    private void listAllSupplies() throws SQLException {
+        List<Supply> supplies = supplyDAO.getAllSupplies(supplierDAO);
+        view.displaySuppliesList(supplies);
+    }
+
+    private void showExpiringSupplies() throws SQLException {
+        List<Supply> expiringSupplies = supplyDAO.getExpiringSupplies(supplierDAO);
+        view.displayExpiringSupplies(expiringSupplies);
+    }
+
 }
-    
-

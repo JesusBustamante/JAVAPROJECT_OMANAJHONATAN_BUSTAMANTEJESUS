@@ -9,21 +9,22 @@ import java.util.Scanner;
 
 public class SupplierController {
 
-    private SupplierView view;
-    private SupplierDAO supplierDAO;
-    private Scanner scanner;
+    private final SupplierView view;
+    private final SupplierDAO supplierDAO;
+    private final Scanner scanner = new Scanner(System.in);
 
-    public SupplierController(SupplierView view) {
-        this.view = view;
-        this.scanner = new Scanner(System.in);
+    public SupplierController() {
+        this.view = new SupplierView();
+        SupplierDAO tempDAO;
         try {
-            this.supplierDAO = new SupplierDAO();
+            tempDAO = new SupplierDAO();
         } catch (SQLException e) {
             view.displayErrorMessage("Error al conectar con la base de datos: " + e.getMessage());
+            tempDAO = null;
         }
+        this.supplierDAO = tempDAO;
     }
 
-    // Método para mostrar el menú de proveedores
     public void showSupplierMenu() {
         boolean exit = false;
 
@@ -62,12 +63,12 @@ public class SupplierController {
     }
 
     private void registerSupplier() {
+        Supplier supplier = view.getSupplierDetails();
+        
         try {
-            Supplier supplier = view.getSupplierDetails();
-            boolean success = supplierDAO.insertSupplier(supplier);
-
-            if (success) {
-                view.displaySuccessMessage("Proveedor registrado exitosamente");
+            int supplierId = supplierDAO.insertSupplier(supplier);
+            if (supplierId > 0) {
+                view.displaySuccessMessage("Proveedor registrado exitosamente con ID: " + supplierId);
             } else {
                 view.displayErrorMessage("Error al registrar el proveedor");
             }
@@ -79,9 +80,13 @@ public class SupplierController {
     private void getAllSuppliers() {
         try {
             List<Supplier> suppliers = supplierDAO.getAllSuppliers();
-            view.displaySuppliersList(suppliers);
+            if (suppliers.isEmpty()) {
+                view.displayErrorMessage("No hay proveedores registrados.");
+            } else {
+                view.displaySuppliersList(suppliers);
+            }
         } catch (SQLException e) {
-            view.displayErrorMessage("Error al obtener proveedores: " + e.getMessage());
+            view.displayErrorMessage("Error en la base de datos: " + e.getMessage());
         }
     }
 
@@ -92,19 +97,18 @@ public class SupplierController {
             if (supplier != null) {
                 view.displaySupplierDetails(supplier);
             } else {
-                view.displayErrorMessage("Proveedor no encontrado");
+                view.displayErrorMessage("Proveedor no encontrado.");
             }
         } catch (SQLException e) {
-            view.displayErrorMessage("Error al buscar proveedor: " + e.getMessage());
+            view.displayErrorMessage("Error en la base de datos: " + e.getMessage());
         }
     }
 
-    // Métodos para ser llamados desde otros controladores
     public Supplier getSupplier(int supplierId) {
         try {
             return supplierDAO.getSupplierById(supplierId);
         } catch (SQLException e) {
-            view.displayErrorMessage("Error al obtener proveedor: " + e.getMessage());
+            view.displayErrorMessage("Error en la base de datos: " + e.getMessage());
             return null;
         }
     }

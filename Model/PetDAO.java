@@ -28,7 +28,7 @@ public class PetDAO {
         } catch (SQLException e) {
             e.printStackTrace();
         } finally {
-            BBDD_Connection.closeConnection(); // 🔹 Cerrar conexión después de la operación
+            BBDD_Connection.closeConnection(); 
         }
     }
 
